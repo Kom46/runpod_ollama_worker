@@ -58,7 +58,7 @@ class OllamaOpenAiEngine(OllamaEngine):
     async def _handle_models(self):
         try:
             response = await client.models.list()
-            yield {"object": "list", "data": [m.to_dict() for m in response.data]}
+            yield {"object": "list", "data": [m.model_dump() for m in response.data]}
         except Exception as e:
             yield {"error": str(e)}
 
@@ -71,11 +71,11 @@ class OllamaOpenAiEngine(OllamaEngine):
                 response = await client.completions.create(**openai_input)
 
             if not streaming:
-                yield response.to_dict()
+                yield response.model_dump()
                 return
 
             async for chunk in response:
-                yield "data: " + json.dumps(chunk.to_dict(), separators=(",", ":")) + "\n\n"
+                yield "data: " + json.dumps(chunk.model_dump(), separators=(",", ":")) + "\n\n"
             yield "data: [DONE]"
         except Exception as e:
             if openai_input.get("stream", False):
@@ -86,6 +86,6 @@ class OllamaOpenAiEngine(OllamaEngine):
     async def _handle_embeddings(self, openai_input):
         try:
             response = await client.embeddings.create(**openai_input)
-            yield response.to_dict()
+            yield response.model_dump()
         except Exception as e:
             yield {"error": str(e)}
