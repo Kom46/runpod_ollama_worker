@@ -58,8 +58,11 @@ class OllamaOpenAiEngine(OllamaEngine):
     async def _handle_models(self):
         try:
             response = await client.models.list()
-            yield {"object": "list", "data": [m.model_dump() for m in response.data]}
+            data = [m.model_dump(mode="json") for m in response.data]
+            print(f"models: {len(data)} found", flush=True)
+            yield {"object": "list", "data": data}
         except Exception as e:
+            print(f"_handle_models error: {e}", flush=True)
             yield {"error": str(e)}
 
     async def _handle_completion(self, openai_input, chat=False):
@@ -71,11 +74,11 @@ class OllamaOpenAiEngine(OllamaEngine):
                 response = await client.completions.create(**openai_input)
 
             if not streaming:
-                yield response.model_dump()
+                yield response.model_dump(mode="json")
                 return
 
             async for chunk in response:
-                yield "data: " + json.dumps(chunk.model_dump(), separators=(",", ":")) + "\n\n"
+                yield "data: " + json.dumps(chunk.model_dump(mode="json"), separators=(",", ":")) + "\n\n"
             yield "data: [DONE]"
         except Exception as e:
             if openai_input.get("stream", False):
@@ -86,6 +89,6 @@ class OllamaOpenAiEngine(OllamaEngine):
     async def _handle_embeddings(self, openai_input):
         try:
             response = await client.embeddings.create(**openai_input)
-            yield response.model_dump()
+            yield response.model_dump(mode="json")
         except Exception as e:
             yield {"error": str(e)}
