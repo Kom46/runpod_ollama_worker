@@ -23,12 +23,22 @@ _MAX_CONCURRENCY = int(os.getenv("MAX_CONCURRENCY", "8"))
 
 
 async def handler(job):
-    print("Job:", job)
-    job_input = JobInput(job["input"])
-    engine_class = OllamaOpenAiEngine if job_input.openai_route else OllamaEngine
-    engine = engine_class()
-    async for batch in engine.generate(job_input):
-        yield batch
+    try:
+        print(f"handler: received job {job.get('id')}", flush=True)
+        job_input = JobInput(job["input"])
+        engine_class = OllamaOpenAiEngine if job_input.openai_route else OllamaEngine
+        engine = engine_class()
+        chunks = []
+        async for batch in engine.generate(job_input):
+            chunks.append(batch)
+            print(f"handler: got chunk type={type(batch).__name__}", flush=True)
+        result = chunks[0] if len(chunks) == 1 else chunks
+        print(f"handler: returning result", flush=True)
+        return result
+    except Exception as e:
+        print(f"handler: ERROR: {e}", flush=True)
+        traceback.print_exc()
+        return {"error": str(e)}
 
 
 print("handler.py: calling runpod.serverless.start()", flush=True)
@@ -37,7 +47,6 @@ try:
         {
             "handler": handler,
             "concurrency_modifier": lambda x: _MAX_CONCURRENCY,
-            "return_aggregate_stream": True,
         }
     )
 except Exception as e:
