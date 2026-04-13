@@ -13,7 +13,9 @@ COPY src/ /app/
 WORKDIR /app
 
 # Start Ollama in background, pull configured models, then start the serverless handler
+# OLLAMA_MODELS points to the RunPod network volume for model persistence
 CMD bash -c "\
+    export OLLAMA_MODELS=/runpod-volume/ollama && \
     ollama serve & \
     until curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; do sleep 1; done && \
     if [ -n \"${OLLAMA_CHAT_MODEL_NAME}\" ]; then ollama pull \"${OLLAMA_CHAT_MODEL_NAME}\"; fi && \
