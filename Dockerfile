@@ -12,6 +12,8 @@ RUN pip3 install --no-cache-dir --break-system-packages -r /app/requirements.txt
 COPY src/ /app/
 WORKDIR /app
 
+ENTRYPOINT []
+
 # Start Ollama in background, pull configured models, then start the serverless handler
 # OLLAMA_MODELS points to the RunPod network volume for model persistence
 CMD bash -c "\
